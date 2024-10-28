@@ -28,6 +28,7 @@ const db = new pg.Client({
     rejectUnauthorized: false,
     required: true,
   },
+})
 let count = 0
 
 
