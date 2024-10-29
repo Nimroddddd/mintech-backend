@@ -16,7 +16,7 @@ app.use(bodyParser.json())
 app.use(cookieParser())
 app.use(cors({
   credentials: true,
-  origin: ["http://localhost:3000"]
+  origin: ["http://localhost:3000", "https://min-tech.netlify.app", "https://mintech-weld.vercel.app"]
 }))
 const db = new pg.Client({
   user: process.env.PG_USER,
