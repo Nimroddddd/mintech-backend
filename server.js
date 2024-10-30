@@ -70,7 +70,7 @@ app.post("/login", async (req, res) => {
         if (result) {
           const token = jwt.sign({_id: user.id}, process.env.SECRET)
           res.cookie("jwt", token, {
-            httpOnly: true,
+            // httpOnly: true,
             maxAge: 1000 * 60 * 30,
           })
           res.send("correct password")
