@@ -45,8 +45,12 @@ app.post("/register", async (req, res) => {
       if (err) {
         throw new Error(err)
       }
-      const response = await db.query("insert into users (email, password) values ($1, $2) returning *", [email, hash])
-      res.json(response.rows[0])  
+      try {
+        const response = await db.query("insert into users (email, password) values ($1, $2) returning *", [email, hash])
+        res.json(response.rows[0]) 
+      } catch(err) {
+        res.send("user already exists")
+      }
     })
   } catch(err) {
     res.send(404)
@@ -66,8 +70,8 @@ app.post("/login", async (req, res) => {
         if (result) {
           const token = jwt.sign({_id: user.id}, process.env.SECRET)
           res.cookie("jwt", token, {
-            httpOnly: true,
-            maxAge: 1000 * 60
+            // httpOnly: true,
+            maxAge: 1000 * 60 * 30,
           })
           res.send("correct password")
         } else {
