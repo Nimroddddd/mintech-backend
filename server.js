@@ -24,10 +24,10 @@ const db = new pg.Client({
   database: process.env.PG_DATABASE,
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
-  ssl: {
-    rejectUnauthorized: false,
-    required: true,
-  },
+  // ssl: {
+  //   rejectUnauthorized: false,
+  //   required: true,
+  // },
 })
 let count = 0
 
@@ -102,6 +102,13 @@ app.get("/user", async (req, res) => {
     count ++
     console.log(count + "cookie aint there")
   }
+})
+
+app.get("/category/:category", async (req, res) => {
+  const category = req.params.category
+  const response = await db.query("select * from products where category = $1", [category])
+  const result = response.rows
+  res.json(result)
 })
 
 app.get("/logout", (req, res) => {
