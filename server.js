@@ -7,6 +7,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser";
 import env from "dotenv"
 
+
 const app = express()
 const port = 8080
 env.config()
@@ -24,10 +25,6 @@ const db = new pg.Client({
   database: process.env.PG_DATABASE,
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
-  ssl: {
-    rejectUnauthorized: false,
-    required: true,
-  },
 })
 let count = 0
 
@@ -111,11 +108,27 @@ app.get("/category/:category", async (req, res) => {
   res.json(result)
 })
 
+app.get("/productids", async (req, res) => {
+  const response = await db.query("select product_id from products");
+  const result = response.rows
+  const productids = []
+  for await (let id of result) {
+    productids.push(id.product_id)
+  }
+  res.json(productids)
+})
+
 app.get("/logout", (req, res) => {
   res.cookie("jwt", "", {
     maxAge: 0
   });
-  res.send("loggedout")
+  res.send("logged out")
+})
+
+app.get("/supabase", async (req, res) => {
+  const response = await db.query("select * from hellod")
+  const result = response.rows
+  res.json(result)
 })
 
 app.listen(port, () => {
