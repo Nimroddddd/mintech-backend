@@ -28,7 +28,6 @@ const db = new pg.Client({
 })
 let count = 0
 
-
 db.connect()
 
 app.get("/", (req, res) => {
@@ -58,6 +57,15 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   const {email, password} = req.body
   const response = await db.query("select * from users where email=$1", [email]);
+  const cartResponse = await db.query("select * from products inner join cart on cart.product_id=products.product_id")
+  const potentialCart = cartResponse.rows
+  const filteredResult = potentialCart.filter(product => product.email == email)
+  let responseCart = []
+  if (filteredResult) {
+    for await (let product of filteredResult) {
+      responseCart.push(product.product_id)
+    }
+  }
   const user = response.rows[0];
   if (user) {
     bcrypt.compare(password, user.password, (err, result) => {
@@ -65,12 +73,12 @@ app.post("/login", async (req, res) => {
         throw new Error(err)
       } else {
         if (result) {
-          const token = jwt.sign({_id: user.id}, process.env.SECRET)
+          const token = jwt.sign({_email: user.email}, process.env.SECRET)
           res.cookie("jwt", token, {
             // httpOnly: true,
             maxAge: 1000 * 60 * 30,
           })
-          res.send("correct password")
+          res.json({message: "correct password", cart: responseCart})
         } else {
           res.send("incorrect password")
         }
@@ -89,7 +97,7 @@ app.get("/user", async (req, res) => {
     if (!claims) {
       res.sendStatus(404)
     }
-    const response = await db.query("select * from users where id=$1", [claims._id]);
+    const response = await db.query("select * from users where email=$1", [claims._email]);
     const user = response.rows[0]
     res.json(user)
     console.log("cookie is there")
@@ -116,8 +124,58 @@ app.get("/product/:id", async (req, res) => {
   res.send(result)
 })
 
+app.get("/add-to-cart/:id", async (req, res) => {
+  try {
+    const {id} = req.params
+    const cookie = req.cookies.jwt
+    const claims = jwt.verify(cookie, process.env.SECRET)
+    await db.query("insert into cart (email, product_id) values ($1, $2)", [claims._email, id])
+    } catch (err) {
+      console.log(err)
+      res.send("unauthorized")
+    }
+})
+
+app.get("/get-cart", async (req, res) => {
+  try {
+    const cookie = req.cookies.jwt
+    const claims = jwt.verify(cookie, process.env.SECRET)
+    const response = await db.query("select * from products inner join cart on cart.product_id=products.product_id")
+    const result = response.rows
+    const filteredResult = result.filter(product => product.email == claims._email)
+    console.log(filteredResult)
+    res.json(filteredResult)
+  } catch (err) {
+    res.sendStatus(401)
+  }
+})
+
+app.post("/get-public-cart", async (req, res) => {
+  try {
+    const products = req.body
+    const response = await db.query("select * from products where product_id = ANY($1::text[])", [products])
+    const result = response.rows
+    res.json(result)
+  } catch (err) {
+    res.sendStatus(500)
+    console.log(err)
+  }
+})
+
+app.delete("/delete-from-cart/:id", async (req, res) => {
+  try {
+    const {id} = req.params;
+    const cookie = req.cookies.jwt;
+    const claims = jwt.verify(cookie, process.env.SECRET)
+    await db.query("delete from cart where email = $1 and product_id = $2", [claims._email, id])
+    res.sendStatus(201)
+  } catch (err) {
+    res.send("unauthorized")
+  }
+})
+
 app.get("/logout", (req, res) => {
-  res.cookie("jwt", "", {
+  res.cookie("jwt", "", { 
     maxAge: 0
   });
   res.send("logged out")
