@@ -26,7 +26,6 @@ const db = new pg.Client({
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
 })
-let count = 0
 
 db.connect()
 
@@ -75,9 +74,9 @@ app.post("/login", async (req, res) => {
         if (result) {
           const token = jwt.sign({_email: user.email}, process.env.SECRET)
           res.cookie("jwt", token, {
-            // httpOnly: true,
-            sameSite: "none",
-            // secure: true,
+            httpOnly: true,
+            sameSite: "None",
+            secure: true,
             maxAge: 1000 * 60 * 30,
           })
           res.json({message: "correct password", cart: responseCart})
@@ -99,15 +98,9 @@ app.get("/user", async (req, res) => {
     if (!claims) {
       res.sendStatus(404)
     }
-    const response = await db.query("select * from users where email=$1", [claims._email]);
-    const user = response.rows[0]
-    res.json(user)
-    console.log("cookie is there")
+    res.json({message: "logged in"})
   } catch (err) {
-    console.log(err)
-    res.send("lol")
-    count ++
-    console.log(count + "cookie aint there")
+    res.json({message: "not logged in"})
   }
 })
 
