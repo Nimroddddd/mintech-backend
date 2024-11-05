@@ -171,7 +171,10 @@ app.delete("/delete-from-cart/:id", async (req, res) => {
 
 app.get("/logout", (req, res) => {
   res.cookie("jwt", "", { 
-    maxAge: 0
+    httpOnly: true,
+    sameSite: "None",
+    secure: true,
+    maxAge: 0,
   });
   res.send("logged out")
 })
