@@ -7,7 +7,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser";
 import env from "dotenv"
 
-
+let count = 0
 const app = express()
 const port = 8080
 env.config()
@@ -30,7 +30,11 @@ const db = new pg.Client({
 db.connect()
 
 app.get("/", (req, res) => {
-  res.send("Hello world")
+  res
+    .cookie("Hello", "hi", {maxAge: 500000})
+    .send("hello world")
+
+  console.log(req.headers.cookie)
 })
 
 app.post("/register", async (req, res) => {
@@ -54,6 +58,8 @@ app.post("/register", async (req, res) => {
 })
 
 app.post("/login", async (req, res) => {
+  console.log(req.cookies, count)
+  count ++
   const {email, password} = req.body
   const response = await db.query("select * from users where email=$1", [email]);
   const cartResponse = await db.query("select * from products inner join cart on cart.product_id=products.product_id")
@@ -76,8 +82,8 @@ app.post("/login", async (req, res) => {
           res.cookie("jwt", token, {
             httpOnly: true,
             sameSite: "None",
-            secure: true,
-            maxAge: 1000 * 60 * 30,
+            // secure: true,
+            maxAge: 1000 * 60 * 60 * 5,
           })
           res.json({message: "correct password", cart: responseCart})
         } else {
@@ -92,6 +98,7 @@ app.post("/login", async (req, res) => {
 })
 
 app.get("/user", async (req, res) => {
+  console.log(req.cookies)
   try {
     const cookie = req.cookies.jwt
     const claims = jwt.verify(cookie, process.env.SECRET)
