@@ -80,9 +80,9 @@ app.post("/login", async (req, res) => {
         if (result) {
           const token = jwt.sign({_email: user.email}, process.env.SECRET)
           res.cookie("jwt", token, {
-            httpOnly: true,
+            // httpOnly: true,
             sameSite: "None",
-            // secure: true,
+            secure: true,
             maxAge: 1000 * 60 * 60 * 5,
           })
           res.json({message: "correct password", cart: responseCart})
