@@ -138,8 +138,14 @@ app.get("/get-cart", async (req, res) => {
     const response = await db.query("select * from products inner join cart on cart.product_id=products.product_id")
     const result = response.rows
     const filteredResult = result.filter(product => product.email == claims._email)
-    console.log(filteredResult)
-    res.json(filteredResult)
+    let total = 0
+    let count = 0
+    for await (let product of filteredResult) {
+      const price = product.price
+      total = price + total
+      count++
+    };
+    res.json({filteredResult, total, count})
   } catch (err) {
     res.sendStatus(401)
   }
@@ -150,7 +156,14 @@ app.post("/get-public-cart", async (req, res) => {
     const products = req.body
     const response = await db.query("select * from products where product_id = ANY($1::text[])", [products])
     const result = response.rows
-    res.json(result)
+    let total = 0
+    let count = 0
+    for await (let product of result) {
+      const price = product.price
+      total = price + total
+      count++
+    }
+    res.json({result, total, count})
   } catch (err) {
     res.sendStatus(500)
     console.log(err)
