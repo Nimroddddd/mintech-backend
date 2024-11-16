@@ -22,6 +22,7 @@ app.use(cors({
 const db = new pg.Client({
   user: process.env.PG_USER,
   host: process.env.PG_HOST,
+
   database: process.env.PG_DATABASE,
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
@@ -81,12 +82,12 @@ app.post("/login", async (req, res) => {
           })
           res.json({message: "correct password", cart: responseCart})
         } else {
-          res.send("incorrect password")
+          res.send({message: "incorrect password"})
         }
       }
     })
   } else {
-    res.send("user not found")
+    res.send({message: "user not found"})
   }
 
 })
