@@ -17,7 +17,7 @@ app.use(bodyParser.json())
 app.use(cookieParser())
 app.use(cors({
   credentials: true,
-  origin: ["http://localhost:3000", "https://min-tech.netlify.app", "https://mintech-weld.vercel.app"]
+  origin: ["http://localhost:3000", "https://min-tech.netlify.app", "https://mintech-weld.vercel.app", "https://mintech-1.onrender.com"]
 }))
 const db = new pg.Client({
   user: process.env.PG_USER,
@@ -75,7 +75,7 @@ app.post("/login", async (req, res) => {
           const token = jwt.sign({_email: user.email}, process.env.SECRET)
           res.cookie("jwt", token, {
             httpOnly: true,
-            // sameSite: "None",
+            sameSite: "None",
             secure: true,
             maxAge: 1000 * 60 * 60 * 5,
           })
