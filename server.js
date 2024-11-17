@@ -45,11 +45,11 @@ app.post("/register", async (req, res) => {
         const response = await db.query("insert into users (email, password) values ($1, $2) returning *", [email, hash])
         res.json(response.rows[0]) 
       } catch(err) {
-        res.status(409)
+        res.sendStatus(409)
       }
     })
   } catch(err) {
-    res.status(500)
+    res.sendStatus(500)
   }
 })
 
