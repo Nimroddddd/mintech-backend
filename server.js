@@ -45,17 +45,16 @@ app.post("/register", async (req, res) => {
         const response = await db.query("insert into users (email, password) values ($1, $2) returning *", [email, hash])
         res.json(response.rows[0]) 
       } catch(err) {
-        res.send("user already exists")
+        res.status(409)
       }
     })
   } catch(err) {
-    res.send(404)
-    console.log(err)
+    res.status(500)
   }
 })
 
 app.post("/login", async (req, res) => {
-  const {email, password} = req.body
+  const { email, password } = req.body
   const response = await db.query("select * from users where email=$1", [email]);
   const cartResponse = await db.query("select * from products inner join cart on cart.product_id=products.product_id")
   const potentialCart = cartResponse.rows
@@ -82,12 +81,12 @@ app.post("/login", async (req, res) => {
           })
           res.json({message: "correct password", cart: responseCart})
         } else {
-          res.send({message: "incorrect password"})
+          res.send({message: "Incorrect Password"})
         }
       }
     })
   } else {
-    res.send({message: "user not found"})
+    res.send({message: "User Not Found"})
   }
 
 })
