@@ -6,10 +6,12 @@ import bcrypt from "bcrypt";
 import cors from "cors"
 import cookieParser from "cookie-parser";
 import env from "dotenv"
+import axios from "axios";
 
 
 const app = express()
 const port = 8080
+const generateUniqueTxRef = () => `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 env.config()
 const saltRounds = 10;
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -180,6 +182,39 @@ app.delete("/delete-from-cart/:id", async (req, res) => {
   } catch (err) {
     res.send("unauthorized")
   }
+})
+
+app.post("/pay", async (req, res) => {
+  const { amount, name, phone, email } = req.body
+  try {
+    const response = await axios.post("https://api.flutterwave.com/v3/payments", {
+      "tx_ref": generateUniqueTxRef(),
+      "amount": amount,
+      "currency": "USD",
+      "redirect_url": "https://min-tech.netlify.app",
+      "payment_options": "card",
+      "customer": {
+          "email": email,
+          "phonenumber": phone,
+          "name": name
+      },
+      "customizations": {
+          "title": "Mintech",
+          "description": "Payment for items in cart",
+          "logo": "https://my-ecommerce-site.com/logo.png"
+      }
+    },
+    {
+      headers: {
+        Authorization: `Bearer FLWSECK_TEST-43bd3794db0839be2f640b8b9ee239fc-X`,
+        "Content-Type": "application/json",
+      }
+    }
+  )
+  res.send(response.data.data.link);
+} catch (err) {
+  res.send(err)
+}
 })
 
 app.get("/logout", (req, res) => {
