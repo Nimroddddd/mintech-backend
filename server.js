@@ -118,7 +118,6 @@ app.get("/product/:id", async (req, res) => {
   const {id} = req.params
   const response = await db.query("select * from products where product_id = $1", [id])
   const result = response.rows[0]
-  console.log(result)
   res.send(result)
 })
 
@@ -129,7 +128,6 @@ app.get("/add-to-cart/:id", async (req, res) => {
     const claims = jwt.verify(cookie, process.env.SECRET)
     await db.query("insert into cart (email, product_id) values ($1, $2)", [claims._email, id])
     } catch (err) {
-      console.log(err)
       res.send("unauthorized")
     }
 })
@@ -145,7 +143,7 @@ app.get("/get-cart", async (req, res) => {
     let count = 0
     for await (let product of filteredResult) {
       const price = product.price
-      total = price + total
+      total = (price + total) * product.count
       count++
     };
     res.json({filteredResult, total, count})
@@ -169,7 +167,6 @@ app.post("/get-public-cart", async (req, res) => {
     res.json({filteredResult, total, count})
   } catch (err) {
     res.sendStatus(500)
-    console.log(err)
   }
 })
 
@@ -215,8 +212,15 @@ app.post("/pay", async (req, res) => {
   res.send(response.data.data.link);
 } catch (err) {
   res.send(err)
-  console.log(err.message)
 }
+})
+
+app.post("/update-cart", async (req, res) => {
+  const cookie = req.cookies.jwt;
+  const claims = jwt.verify(cookie, process.env.SECRET);
+  const { _email:email } = claims
+  const { count, id } = req.body;
+  db.query("update cart set count = $1 where product_id = $2 and email = $3", [count, id, email])
 })
 
 app.get("/logout", (req, res) => {
