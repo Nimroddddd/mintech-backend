@@ -188,7 +188,7 @@ app.post("/pay", async (req, res) => {
   try {
     const response = await axios.post("https://api.flutterwave.com/v3/payments", {
       "tx_ref": generateUniqueTxRef(),
-      "amount": parseInt(amount),
+      "amount": amount,
       "currency": "USD",
       "redirect_url": "https://min-tech.netlify.app",
       "payment_options": "card",
