@@ -184,6 +184,7 @@ app.delete("/delete-from-cart/:id", async (req, res) => {
 
 app.post("/pay", async (req, res) => {
   const { amount, name, phone, email } = req.body
+  console.log(req.body)
   try {
     const response = await axios.post("https://api.flutterwave.com/v3/payments", {
       "tx_ref": generateUniqueTxRef(),
