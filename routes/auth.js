@@ -153,7 +153,7 @@ router.post("/reset-password-request", async (req, res) => {
     await transporter.sendMail(mailOptions)
     res.json({message: "success"})
   } catch (err) {
-    console.log("Something went wrong")
+    console.log(err)
   }
   console.log(req.body)
 })
