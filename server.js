@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import dataRoute from "./routes/data.js"
 import cartRoute from "./routes/cart.js"
 import authRoute from "./routes/auth.js"
+import crypto from "crypto"
+import bcrypt from "bcrypt"
 
 
 const app = express()

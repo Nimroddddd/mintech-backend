@@ -15,6 +15,8 @@ const db = new pg.Client({
 })
 const saltRounds = 10;
 const router = express.Router();
+const resetTokens = new Map()
+
 
 db.connect()
 env.config()
@@ -101,17 +103,43 @@ router.get("/logout", (req, res) => {
 })
 
 router.post("/reset-password", async (req, res) => {
-  console.log(req.body)
+  const { token, email, newPassword } = req.body
+  try {
+    const tokenData = resetTokens.get(email);
+    if (!tokenData || Date.now() > tokenData.expires) {
+      return res.status(400).json({ message: "Token is invalid or expired." });
+    }
+
+    const isTokenValid = await bcrypt.compare(token, tokenData.token);
+    if (!isTokenValid) {
+      return res.status(400).json({ message: "Invalid token." });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    const response = await db.query("update users set password = $1 where email = $2", [hashedPassword, email])
+    res.json({message: "Password update succeessful"})
+    resetTokens.delete(email);
+  } catch (err) {
+    console.log(err)
+    res.json({message: "Something went wrong"})
+  }
 })
 
 router.post("/reset-password-request", async (req, res) => {
   const { email } = req.body
+  const response  = await db.query("select * from users where email = $1", [email]);
+  const result = response.rows;
+  console.log(result)
+  if (!result.length) {
+    return res.json({message: "User not found"})
+  }
   const token = crypto.randomBytes(32).toString("hex");
-  const link = `http://localhost:3000/reset-password/${token}`
+  const hashedToken = await bcrypt.hash(token, 10);
+  resetTokens.set(email, { token: hashedToken, expires: Date.now() + 1000 * 60 * 5 });
+  const link = `https://min-tech.netlify.app/reset-password/?token=${token}&email=${email}`
   const transporter = nodemailer.createTransport({
     service: "Gmail",
     auth: {
-      user: "min12345kabir@gmail.com",
+      user: process.env.EMAIL,
       pass: process.env.EMAIL_PASSWORD,
     },
   });
@@ -119,9 +147,14 @@ router.post("/reset-password-request", async (req, res) => {
     to: email,
     subject: "Password Reset",
     text: `Click here to reset your password: ${link}`,
+    html: `<p>Click <a href="${link}">here</a> to reset your password.</p>`
   };
-  await transporter.sendMail(mailOptions)
-  res.send("success")
+  try {
+    await transporter.sendMail(mailOptions)
+    res.json({message: "success"})
+  } catch (err) {
+    console.log("Something went wrong")
+  }
   console.log(req.body)
 })
 
