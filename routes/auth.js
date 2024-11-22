@@ -2,6 +2,9 @@ import bcrypt from "bcrypt";
 import pg from "pg";
 import express from "express"
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer"
+import crypto from "crypto"
+import env from "dotenv";
 
 const db = new pg.Client({
   user: process.env.PG_USER,
@@ -14,6 +17,7 @@ const saltRounds = 10;
 const router = express.Router();
 
 db.connect()
+env.config()
 
 
 router.post("/register", async (req, res) => {
@@ -94,6 +98,31 @@ router.get("/logout", (req, res) => {
     maxAge: 0,
   });
   res.send("logged out")
+})
+
+router.post("/reset-password", async (req, res) => {
+  console.log(req.body)
+})
+
+router.post("/reset-password-request", async (req, res) => {
+  const { email } = req.body
+  const token = crypto.randomBytes(32).toString("hex");
+  const link = `http://localhost:3000/reset-password/${token}`
+  const transporter = nodemailer.createTransport({
+    service: "Gmail",
+    auth: {
+      user: "min12345kabir@gmail.com",
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+  const mailOptions = {
+    to: email,
+    subject: "Password Reset",
+    text: `Click here to reset your password: ${link}`,
+  };
+  await transporter.sendMail(mailOptions)
+  res.send("success")
+  console.log(req.body)
 })
 
 export default router;
