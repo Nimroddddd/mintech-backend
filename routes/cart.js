@@ -84,7 +84,9 @@ router.post("/update-cart", async (req, res) => {
   const claims = jwt.verify(cookie, process.env.SECRET);
   const { _email:email } = claims
   const { count, id } = req.body;
-  db.query("update cart set count = $1 where product_id = $2 and email = $3", [count, id, email])
+  const response = db.query("update cart set count = $1 where product_id = $2 and email = $3 returning *", [count, id, email])
+  res.json(response.rows);
+  
 })
 
 export default router;

@@ -134,7 +134,7 @@ router.post("/reset-password-request", async (req, res) => {
   }
   const token = crypto.randomBytes(32).toString("hex");
   const hashedToken = await bcrypt.hash(token, 10);
-  resetTokens.set(email, { token: hashedToken, expires: Date.now() + 1000 * 60 * 5 });
+  resetTokens.set(email, { token: hashedToken, expires: Date.now() + 900000 });
   const link = `https://min-tech.netlify.app/reset-password/?token=${token}&email=${email}`
   const transporter = nodemailer.createTransport({
     service: "Gmail",
@@ -146,8 +146,8 @@ router.post("/reset-password-request", async (req, res) => {
   const mailOptions = {
     to: email,
     subject: "Password Reset",
-    text: `Click here to reset your password: ${link}`,
-    html: `<p>Click <a href="${link}">here</a> to reset your password.</p>`
+    // text: `Click here to reset your password: ${link}`,
+    html: `<p>Click <a href="${link}">here</a> to reset your password. The link is valid for 15 minutes.</p>`
   };
   try {
     await transporter.sendMail(mailOptions)
