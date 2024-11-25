@@ -100,4 +100,63 @@ router.get("/cart", async (req, res) => {
   console.log(products)
 })
 
+router.get("/add-to-wishlist/:id", async (req, res) => {
+  try {
+    const {id} = req.params
+    console.log(id)
+    const cookie = req.cookies.jwt
+    const claims = jwt.verify(cookie, process.env.SECRET)
+    await db.query("insert into wishlist (email, product_id) values ($1, $2)", [claims._email, id])
+    return res.sendStatus(201)
+    } catch (err) {
+      res.send("unauthorized")
+      console.log("unauthorized")
+    }
+})
+
+router.get("/get-wishlist", async (req, res) => {
+  try {
+    const cookie = req.cookies.jwt
+    const claims = jwt.verify(cookie, process.env.SECRET)
+    const response = await db.query("select * from products inner join wishlist on wishlist.product_id=products.product_id")
+    const result = response.rows
+    const filteredResult = result.filter(product => product.email == claims._email)
+    let count = 0
+    for await (let product of filteredResult) {
+      count++
+    };
+    res.json({filteredResult, count})
+  } catch (err) {
+    res.sendStatus(401)
+  }
+})
+
+router.post("/get-public-wishlist", async (req, res) => {
+  try {
+    const products = req.body
+    const response = await db.query("select * from products where product_id = ANY($1::text[])", [products])
+    const filteredResult = response.rows
+    let count = 0
+    for await (let product of filteredResult) {
+      count++
+    }
+    res.json({filteredResult, count})
+  } catch (err) {
+    res.sendStatus(500)
+    console.log(err)
+  }
+})
+
+router.delete("/delete-from-wishlist/:id", async (req, res) => {
+  try {
+    const {id} = req.params;
+    const cookie = req.cookies.jwt;
+    const claims = jwt.verify(cookie, process.env.SECRET)
+    await db.query("delete from wishlist where email = $1 and product_id = $2", [claims._email, id])
+    return res.sendStatus(201)
+  } catch (err) {
+    res.send("unauthorized")
+  }
+})
+
 export default router;
