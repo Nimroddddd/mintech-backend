@@ -24,8 +24,10 @@ router.get("/add-to-cart/:id", async (req, res) => {
     const cookie = req.cookies.jwt
     const claims = jwt.verify(cookie, process.env.SECRET)
     await db.query("insert into cart (email, product_id) values ($1, $2)", [claims._email, id])
+    return res.sendStatus(201)
     } catch (err) {
       res.send("unauthorized")
+      console.log("unauthorized")
     }
 })
 
@@ -73,7 +75,7 @@ router.delete("/delete-from-cart/:id", async (req, res) => {
     const cookie = req.cookies.jwt;
     const claims = jwt.verify(cookie, process.env.SECRET)
     await db.query("delete from cart where email = $1 and product_id = $2", [claims._email, id])
-    res.sendStatus(201)
+    return res.sendStatus(201)
   } catch (err) {
     res.send("unauthorized")
   }
@@ -86,7 +88,16 @@ router.post("/update-cart", async (req, res) => {
   const { count, id } = req.body;
   const response = db.query("update cart set count = $1 where product_id = $2 and email = $3 returning *", [count, id, email])
   res.json(response.rows);
-  
+})
+
+router.get("/cart", async (req, res) => {
+  let products = []
+  const response = await db.query("select product_id from products")
+  const result = response.rows;
+  for await (let product of result) {
+    products.push(product.product_id)
+  }
+  console.log(products)
 })
 
 export default router;
