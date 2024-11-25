@@ -20,7 +20,6 @@ db.connect()
 router.get("/add-to-cart/:id", async (req, res) => {
   try {
     const {id} = req.params
-    console.log(id)
     const cookie = req.cookies.jwt
     const claims = jwt.verify(cookie, process.env.SECRET)
     await db.query("insert into cart (email, product_id) values ($1, $2)", [claims._email, id])
@@ -103,7 +102,6 @@ router.get("/cart", async (req, res) => {
 router.get("/add-to-wishlist/:id", async (req, res) => {
   try {
     const {id} = req.params
-    console.log(id)
     const cookie = req.cookies.jwt
     const claims = jwt.verify(cookie, process.env.SECRET)
     await db.query("insert into wishlist (email, product_id) values ($1, $2)", [claims._email, id])
