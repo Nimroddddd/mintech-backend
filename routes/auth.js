@@ -60,12 +60,12 @@ router.post("/login", async (req, res) => {
         throw new Error(err)
       } else {
         if (result) {
-          const token = jwt.sign({_email: user.email}, process.env.SECRET)
+          const token = jwt.sign({_email: user.email}, process.env.SECRET, { expiresIn: "12h" })
           res.cookie("jwt", token, {
             httpOnly: true,
             sameSite: "None",
             secure: true,
-            maxAge: 1000 * 60 * 60 * 5,
+            maxAge: 1000 * 60 * 60 * 12,
           })
           res.json({message: "correct password", cart: responseCart})
         } else {
@@ -104,10 +104,14 @@ router.get("/logout", (req, res) => {
 
 router.post("/reset-password", async (req, res) => {
   const { token, email, newPassword } = req.body
+  if (!email || !token) {
+    return res.json({message: "Insufficient credentials provided."})
+  }
+  console.log(req.body)
   try {
     const tokenData = resetTokens.get(email);
     if (!tokenData || Date.now() > tokenData.expires) {
-      return res.status(400).json({ message: "Token is invalid or expired." });
+      return res.json({ message: "Token is invalid or expired." });
     }
 
     const isTokenValid = await bcrypt.compare(token, tokenData.token);
@@ -115,7 +119,7 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ message: "Invalid token." });
     }
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-    const response = await db.query("update users set password = $1 where email = $2", [hashedPassword, email])
+    await db.query("update users set password = $1 where email = $2", [hashedPassword, email])
     res.json({message: "Password update succeessful"})
     resetTokens.delete(email);
   } catch (err) {
@@ -146,7 +150,6 @@ router.post("/reset-password-request", async (req, res) => {
   const mailOptions = {
     to: email,
     subject: "Password Reset",
-    // text: `Click here to reset your password: ${link}`,
     html: `<p>Click <a href="${link}">here</a> to reset your password. The link is valid for 15 minutes.</p>`
   };
   try {
