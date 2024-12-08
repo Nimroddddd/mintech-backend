@@ -19,9 +19,10 @@ db.connect()
 
 router.get("/add-to-cart/:id", async (req, res) => {
   try {
-    const {id} = req.params
-    const cookie = req.cookies.jwt
-    const claims = jwt.verify(cookie, process.env.SECRET)
+    const { id } = req.params
+    console.log(req.headers)
+    const { authorization } = req.headers;
+    const claims = jwt.verify(authorization, process.env.SECRET)
     await db.query("insert into cart (email, product_id) values ($1, $2)", [claims._email, id])
     return res.sendStatus(201)
     } catch (err) {
@@ -32,8 +33,8 @@ router.get("/add-to-cart/:id", async (req, res) => {
 
 router.get("/get-cart", async (req, res) => {
   try {
-    const cookie = req.cookies.jwt
-    const claims = jwt.verify(cookie, process.env.SECRET)
+    const { authorization } = req.headers;
+    const claims = jwt.verify(authorization, process.env.SECRET)
     const response = await db.query("select * from products inner join cart on cart.product_id=products.product_id")
     const result = response.rows
     const filteredResult = result.filter(product => product.email == claims._email)
@@ -70,9 +71,9 @@ router.post("/get-public-cart", async (req, res) => {
 
 router.delete("/delete-from-cart/:id", async (req, res) => {
   try {
-    const {id} = req.params;
-    const cookie = req.cookies.jwt;
-    const claims = jwt.verify(cookie, process.env.SECRET)
+    const { id } = req.params;
+    const { authorization } = req.headers;
+    const claims = jwt.verify(authorization, process.env.SECRET)
     await db.query("delete from cart where email = $1 and product_id = $2", [claims._email, id])
     return res.sendStatus(201)
   } catch (err) {
@@ -81,12 +82,16 @@ router.delete("/delete-from-cart/:id", async (req, res) => {
 })
 
 router.post("/update-cart", async (req, res) => {
-  const cookie = req.cookies.jwt;
-  const claims = jwt.verify(cookie, process.env.SECRET);
-  const { _email:email } = claims
-  const { count, id } = req.body;
-  const response = db.query("update cart set count = $1 where product_id = $2 and email = $3 returning *", [count, id, email])
-  res.json(response.rows);
+  try {
+    const { authorization } = req.headers;
+    const claims = jwt.verify(authorization, process.env.SECRET);
+    const { _email:email } = claims
+    const { count, id } = req.body;
+    const response = db.query("update cart set count = $1 where product_id = $2 and email = $3 returning *", [count, id, email])
+    res.json(response.rows);
+  } catch (err) {
+    console.log(err.message)
+  }
 })
 
 router.get("/cart", async (req, res) => {
@@ -102,8 +107,8 @@ router.get("/cart", async (req, res) => {
 router.get("/add-to-wishlist/:id", async (req, res) => {
   try {
     const {id} = req.params
-    const cookie = req.cookies.jwt
-    const claims = jwt.verify(cookie, process.env.SECRET)
+    const { authorization } = req.headers;
+    const claims = jwt.verify(authorization, process.env.SECRET)
     await db.query("insert into wishlist (email, product_id) values ($1, $2)", [claims._email, id])
     return res.sendStatus(201)
     } catch (err) {
@@ -114,8 +119,8 @@ router.get("/add-to-wishlist/:id", async (req, res) => {
 
 router.get("/get-wishlist", async (req, res) => {
   try {
-    const cookie = req.cookies.jwt
-    const claims = jwt.verify(cookie, process.env.SECRET)
+    const { authorization } = req.headers;
+    const claims = jwt.verify(authorization, process.env.SECRET)
     const response = await db.query("select * from products inner join wishlist on wishlist.product_id=products.product_id")
     const result = response.rows
     const filteredResult = result.filter(product => product.email == claims._email)
@@ -148,8 +153,8 @@ router.post("/get-public-wishlist", async (req, res) => {
 router.delete("/delete-from-wishlist/:id", async (req, res) => {
   try {
     const {id} = req.params;
-    const cookie = req.cookies.jwt;
-    const claims = jwt.verify(cookie, process.env.SECRET)
+    const { authorization } = req.headers;
+    const claims = jwt.verify(authorization, process.env.SECRET)
     await db.query("delete from wishlist where email = $1 and product_id = $2", [claims._email, id])
     return res.sendStatus(201)
   } catch (err) {

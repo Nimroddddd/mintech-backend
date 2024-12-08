@@ -43,46 +43,36 @@ router.post("/register", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body
-  const response = await db.query("select * from users where email=$1", [email]);
-  const cartResponse = await db.query("select * from products inner join cart on cart.product_id=products.product_id")
-  const potentialCart = cartResponse.rows
-  const filteredResult = potentialCart.filter(product => product.email == email)
-  let responseCart = []
-  if (filteredResult) {
-    for await (let product of filteredResult) {
-      responseCart.push(product.product_id)
+  try {
+    const response = await db.query("select * from users where email=$1", [email]);
+    const cartResponse = await db.query("select * from products inner join cart on cart.product_id=products.product_id where email = $1", [email])
+    const responseCart =  cartResponse.rows.map(product => product.product_id)
+    const user = response.rows[0];
+    if (!user) {
+      return res.send({message: "User Not Found"})
     }
-  }
-  const user = response.rows[0];
-  if (user) {
-    bcrypt.compare(password, user.password, (err, result) => {
-      if (err) {
-        throw new Error(err)
-      } else {
-        if (result) {
-          const token = jwt.sign({_email: user.email}, process.env.SECRET, { expiresIn: "12h" })
-          res.cookie("jwt", token, {
-            httpOnly: true,
-            sameSite: "None",
-            secure: true,
-            maxAge: 1000 * 60 * 60 * 12,
-          })
-          res.json({message: "correct password", cart: responseCart})
-        } else {
-          res.send({message: "Incorrect Password"})
-        }
-      }
-    })
-  } else {
-    res.send({message: "User Not Found"})
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+    if (!isPasswordValid) {
+      return res.send({message: "Incorrect Password"})
+    }
+    const token = jwt.sign({_email: user.email}, process.env.SECRET, { expiresIn: "12h" })
+    // res.cookie("jwt", token, {
+    //   httpOnly: true,
+    //   sameSite: "None",
+    //   secure: true,
+    //   maxAge: 1000 * 60 * 60 * 12,
+    // })
+    res.json({message: "correct password", cart: responseCart, token})
+  } catch (err) {
+    console.log(err)
   }
 
 })
 
 router.get("/user", async (req, res) => {
   try {
-    const cookie = req.cookies.jwt
-    const claims = jwt.verify(cookie, process.env.SECRET)
+    const { authorization } = req.headers
+    const claims = jwt.verify(authorization, process.env.SECRET)
     if (!claims) {
       res.sendStatus(404)
     }
@@ -92,15 +82,15 @@ router.get("/user", async (req, res) => {
   }
 })
 
-router.get("/logout", (req, res) => {
-  res.cookie("jwt", "", { 
-    httpOnly: true,
-    sameSite: "None",
-    secure: true,
-    maxAge: 0,
-  });
-  res.send("logged out")
-})
+// router.get("/logout", (req, res) => {
+//   res.cookie("jwt", "", { 
+//     httpOnly: true,
+//     sameSite: "None",
+//     secure: true,
+//     maxAge: 0,
+//   });
+//   res.send("logged out")
+// })
 
 router.post("/reset-password", async (req, res) => {
   const { token, email, newPassword } = req.body
