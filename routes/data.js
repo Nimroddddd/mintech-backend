@@ -46,6 +46,7 @@ router.post("/pay", async (req, res) => {
     }
   )
   res.send(response.data.data.link);
+  console.log(response.data)
 } catch (err) {
   res.send(err)
   console.log(err)

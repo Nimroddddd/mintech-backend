@@ -19,10 +19,15 @@
   },
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "api/index.js",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "vercel-build": "echo 'Building...'",
+    "dev": "nodemon api/index.js"
   }
 }
